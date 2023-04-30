@@ -1,5 +1,6 @@
 ﻿using Avalonia.Media.Imaging;
 using ReactiveUI;
+using System;
 using System.Linq;
 
 namespace AirportTimeTable.Models {
@@ -10,7 +11,7 @@ namespace AirportTimeTable.Models {
         public string Time { get; }
         public string TimeCount { get; }
         public string Terminal { get; }
-        public string Status { get; }
+        public string Status { get; private set; }
 
         public Bitmap BigImage { get; }
         public string Path { get; }
@@ -42,6 +43,24 @@ namespace AirportTimeTable.Models {
 
             if (last_opened != null && last_opened != this) last_opened.Released();
             last_opened = Visible ? this : null;
+        }
+
+        private static readonly Random rand = new();
+
+        public void RecalcTime(int num_day, int mins_offset) {
+            var t_arr = TimeCount.Split(':');
+            int minutes = (num_day * 24 + int.Parse(t_arr[0])) * 60 + int.Parse(t_arr[1]);
+            int delta = minutes - mins_offset;
+            if (delta > 2 * 24 * 60) delta -= BaseReader.days_num * 24 * 60;
+
+            
+
+            if (delta < rand.Next(-30, -10)) Status = "Вылетел";
+            else if (delta < 0) Status = "Посадка завершена";
+            else if (delta <= 30) Status = "Регистр. завершена";
+            else Status = rand.Next(3) > 0 ? "Регистрация" : Time == TimeCount ? "По расписанию" : "Задерживается";
+
+            if (delta <= 30 && rand.Next(25) == 0) Status = "Отменён";
         }
     }
 }

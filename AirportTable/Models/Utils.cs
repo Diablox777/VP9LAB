@@ -18,6 +18,8 @@ namespace AirportTable.Models {
     public static class Utils {
         
 
+        
+
         public static string Base64Encode(string plainText) {
             var plainTextBytes = Encoding.UTF8.GetBytes(plainText);
             return Convert.ToBase64String(plainTextBytes);
@@ -41,7 +43,7 @@ namespace AirportTable.Models {
                 sb.Append(i switch {
                     '"' => "\\\"",
                     '\\' => "\\\\",
-                    '$' => "{$", 
+                    '$' => "{$", // Чисто по моей части ;'-}
                     _ => i
                 });
             }
@@ -124,7 +126,7 @@ namespace AirportTable.Models {
                     return s;
                 case JsonValueKind.Number:
                     if (@item.ToString().Contains('.')) return @item.GetDouble();
-                    // Иначе это целое число
+                    
                     long a = @item.GetInt64();
                     int b = @item.GetInt32();
                     // short c = @item.GetInt16();
@@ -294,7 +296,9 @@ namespace AirportTable.Models {
         }
         public static string Xml2json(string xml) => ToJSONHandler(XElement.Parse(xml));
 
-        
+        /*
+         * YAML абилка
+         */
 
         public static string YAMLEscape(string str) {
             string[] arr = new[] { "true", "false", "null", "undefined", "" };
@@ -370,10 +374,10 @@ namespace AirportTable.Models {
             else if (json[0] == '{') data = JsonSerializer.Deserialize<Dictionary<string, object?>>(json);
             else return null;
 
-            return "---" + ToYAMLHandler(data, "\n") + "\n"; 
+            return "---" + ToYAMLHandler(data, "\n") + "\n"; // Конец будет обязателен, как в питоне!
         }
 
-       
+        
 
         private static void YAML_Log(string mess, int level = 0) {
             if (level >= 4) Log.Write(mess);
@@ -390,7 +394,7 @@ namespace AirportTable.Models {
                     c = yaml[pos++];
                 }
                 c = yaml[pos++];
-                if (c != ':' && c != '\n') throw new Exception("После '\"' может быть лишь ':', либо '\n'");
+                if (c != ':' && c != '\n') throw new Exception("После '\"' может быть только ':', либо '\n'");
                 if (c == ':') pos--;
             } else {
                 sb.Append(first);
@@ -411,7 +415,7 @@ namespace AirportTable.Models {
                 sb.Append(c);
                 c = yaml[pos++];
             }
-            if (c != '\n') throw new Exception("После числа в любом случае должен быть должен быть '\n");
+            if (c != '\n') throw new Exception("После числа всяко должен быть '\n");
             YAML_Log("Parsed num: " + sb.ToString(), 1);
             return sb.ToString();
         }
@@ -467,7 +471,7 @@ namespace AirportTable.Models {
                         YAML_Log("DOWN_LAYER: '" + layer + "', '" + layer3 + "'");
                         if (layer != layer3) {
                             if (layer3.Length > layer.Length) throw new Exception("Ожидался элемент списка вместо подъёма");
-                            if (!layer.StartsWith(layer3)) throw new Exception("Упавший слой странный");
+                            if (!layer.StartsWith(layer3)) throw new Exception("Странность в упавшем layer'е");
                             YAML_Log("Падение"); pos = saved_pos2; break;
                         }
 
@@ -487,17 +491,17 @@ namespace AirportTable.Models {
                     var layer2 = YAML_ParseLayer(ref yaml, ref pos);
                     YAML_Log("LAYER: '" + layer + "', '" + layer2 + "'");
                     if (layer2.Length < layer.Length) {
-                        if (!layer.StartsWith(layer2)) throw new Exception("Упавший слой странный");
+                        if (!layer.StartsWith(layer2)) throw new Exception("Странность в упавшем layer'е");
                         YAML_Log("Падение"); pos = saved_pos; break;
                     }
-                    if (!layer2.StartsWith(layer)) throw new Exception("Упавший слой странный");
+                    if (!layer2.StartsWith(layer)) throw new Exception("Странность в следующем layer'е");
                     if (layer == layer2) { YAML_Log("Сохранение"); pos = saved_pos; continue; }
                     YAML_Log("Подъём");
                     if (c == '\n') {
                         pos = saved_pos;
                         var value = YAML_ToJSONHandler(ref yaml, ref pos);
                         res.Append(value);
-                    } else throw new Exception("Здесь подъем невозможен");
+                    } else throw new Exception("Здесь не может быть подъёма");
                 }
                 res.Append(']');
                 YAML_Log("Список рождён: " + res.ToString(), 2);
@@ -509,7 +513,7 @@ namespace AirportTable.Models {
                 res.Append('{');
                 bool First = true;
                 while (true) {
-                    if (pos == yaml.Length) break; 
+                    if (pos == yaml.Length) break; // Конец файла
 
                     if (First) First = false;
                     else {
@@ -518,7 +522,7 @@ namespace AirportTable.Models {
                         YAML_Log("DICT_LAYER: '" + layer + "', '" + layer3 + "'");
                         if (layer != layer3) {
                             if (layer3.Length > layer.Length) throw new Exception("Ожидался элемент словаря вместо подъёма");
-                            if (!layer.StartsWith(layer3)) throw new Exception("Упавший слой странный");
+                            if (!layer.StartsWith(layer3)) throw new Exception("Странность в упавшем layer'е");
                             YAML_Log("Падение"); pos = saved_pos2; break;
                         }
 
@@ -542,10 +546,10 @@ namespace AirportTable.Models {
                     var layer2 = YAML_ParseLayer(ref yaml, ref pos);
                     YAML_Log("LAYER: '" + layer + "', '" + layer2 + "'");
                     if (layer2.Length < layer.Length) {
-                        if (!layer.StartsWith(layer2)) throw new Exception("Упавший слой странный");
+                        if (!layer.StartsWith(layer2)) throw new Exception("Странность в упавшем layer'е");
                         YAML_Log("Падение"); pos = saved_pos; break;
                     }
-                    if (!layer2.StartsWith(layer)) throw new Exception("Упавший слой странный");
+                    if (!layer2.StartsWith(layer)) throw new Exception("Странность в следующем layer'е");
                     if (layer == layer2) { YAML_Log("Сохранение"); pos = saved_pos; continue; }
                     YAML_Log("Подъём");
                     if (c == '\n') {
@@ -569,7 +573,7 @@ namespace AirportTable.Models {
             } catch (Exception e) { Log.Write("Ошибка YAML парсера: " + e); throw; }
         }
 
-       
+        
 
         public static string? Obj2xml(object? obj) => Json2xml(Obj2json(obj)); 
         public static object? Xml2obj(string xml) => Json2obj(Xml2json(xml));
@@ -590,7 +594,7 @@ namespace AirportTable.Models {
             bitmap.Save(path);
         }
 
-        public static string TrimAll(this string str) { 
+        public static string TrimAll(this string str) { // Помимо пробелов по бокам, убирает повторы пробелов внутри
             StringBuilder sb = new();
             for (int i = 0; i < str.Length; i++) {
                 if (i > 0 && str[i] == ' ' && str[i - 1] == ' ') continue;
@@ -599,7 +603,7 @@ namespace AirportTable.Models {
             return sb.ToString().Trim();
         }
 
-     
+        
         public static string[] NormSplit(this string str) => str.TrimAll().Split(' ');
 
         public static string GetStackInfo() {
